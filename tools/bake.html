@@ -1,0 +1,80 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Bake garden art</title></head>
+<body style="background:#333">
+<script>
+// Turns the cut-out vine pieces (tools/sprites/vine-N.png, from tools/vine-sheet.png) into one atlas of
+// art-resolution sprites at three growth sizes, plus the toolbar icons. Run with: node tools/bake.mjs
+const DEF = {
+  L0: { i: 0, w: 34, a: 'tr' }, L2: { i: 2, w: 27, a: 'tr' }, L4: { i: 4, w: 20, a: 'tr' },
+  R1: { i: 1, w: 34, a: 'tl' }, R3: { i: 3, w: 27, a: 'tl' }, R5: { i: 5, w: 20, a: 'tl' },
+  H6: { i: 6, w: 28, a: 't' }, H7: { i: 7, w: 22, a: 't' },
+  Y8: { i: 8, w: 16, a: 'b' }, Y11: { i: 11, w: 12, a: 'b' },
+  bud: { i: 9, h: 30, a: 'b' }, half: { i: 10, h: 31, a: 'b' }, open: { i: 12, w: 42, a: 'c' }, side: { i: 13, w: 38, a: 'bl' },
+  ten1: { i: 14, h: 34, a: 'bl' }, ten2: { i: 15, h: 26, a: 'b' }, strand: { i: 16, h: 128, a: 't' },
+  blossom: { i: 17, w: 42, a: 'b' }, ivy: { i: 18, w: 54, a: 'bl' },
+};
+const STEPS = [.5, .75, 1];
+const mk = (w, h) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; };
+const load = src => new Promise((r, j) => { const i = new Image(); i.onload = () => r(i); i.onerror = j; i.src = src; });
+
+function prep(img, sz, k) {
+  const target = (sz.h ? sz.h / img.height : sz.w / img.width) * k, TW = img.width * target;
+  let src = img, w = img.width, h = img.height;
+  while (w / 2 >= TW) { const c = mk(Math.ceil(w / 2), Math.ceil(h / 2)), x = c.getContext('2d'); x.imageSmoothingQuality = 'high'; x.drawImage(src, 0, 0, c.width, c.height); src = c; w = c.width; h = c.height; }
+  const tw = Math.max(1, Math.round(img.width * target)), th = Math.max(1, Math.round(img.height * target));
+  const c = mk(tw, th), x = c.getContext('2d'); x.imageSmoothingQuality = 'high'; x.drawImage(src, 0, 0, tw, th);
+  const id = x.getImageData(0, 0, tw, th), d = id.data;
+  for (let i = 0; i < d.length; i += 4) d[i + 3] = d[i + 3] >= 110 ? 255 : 0;
+  x.putImageData(id, 0, 0);
+  let best = -1e9, ax = 0, ay = 0;
+  const score = { tr: p => p[0] - p[1], tl: p => -p[0] - p[1], t: p => -p[1] * 4 - Math.abs(p[0] - tw / 2), b: p => p[1] * 4 - Math.abs(p[0] - tw / 2), bl: p => -p[0] * .6 + p[1] }[sz.a];
+  if (sz.a === 'c') { ax = Math.round(tw / 2); ay = Math.round(th / 2); }
+  else for (let yy = 0; yy < th; yy++) for (let xx = 0; xx < tw; xx++) if (d[(yy * tw + xx) * 4 + 3]) { const s = score([xx, yy]); if (s > best) { best = s; ax = xx; ay = yy; } }
+  return { c, w: tw, h: th, ax, ay };
+}
+
+// 16 x 16 pixel sprout for the toolbar
+const ICON = [
+  '................',
+  '..........GG....',
+  '.........GLLG...',
+  '..GG....GLLLG...',
+  '.GLLG...GLLG....',
+  '.GLLLG..GLG.....',
+  '..GLLG.GG.......',
+  '...GGLGS........',
+  '.....GSS........',
+  '......S.........',
+  '......S.........',
+  '......S.........',
+  '..BBBBBBBBBB....',
+  '..BDDDDDDDDB....',
+  '...BDDDDDDB.....',
+  '....BBBBBB......',
+];
+const ICOL = { G: '#2f7a2a', L: '#7ed957', S: '#3e9d36', B: '#5a3a24', D: '#8a5a3a' };
+function icon(size) {
+  const c = mk(size, size), x = c.getContext('2d'), k = size / 16;
+  x.imageSmoothingEnabled = false;
+  ICON.forEach((row, y) => [...row].forEach((ch, xx) => { if (ICOL[ch]) { x.fillStyle = ICOL[ch]; x.fillRect(Math.round(xx * k), Math.round(y * k), Math.ceil(k), Math.ceil(k)); } }));
+  return c.toDataURL('image/png');
+}
+
+window.bake = async () => {
+  const imgs = {};
+  const items = [];
+  for (const [name, d] of Object.entries(DEF)) {
+    if (!imgs[d.i]) imgs[d.i] = await load(`sprites/vine-${d.i}.png`);
+    STEPS.forEach((k, s) => items.push({ name, s, ...prep(imgs[d.i], d, k) }));
+  }
+  // shelf-pack into a 512-wide atlas, 1 px gutters
+  const AWID = 512; let x = 0, y = 0, rowH = 0;
+  items.sort((a, b) => b.h - a.h);
+  for (const it of items) { if (x + it.w + 1 > AWID) { x = 0; y += rowH + 1; rowH = 0; } it.x = x; it.y = y; x += it.w + 1; rowH = Math.max(rowH, it.h); }
+  const H = y + rowH, atlas = mk(AWID, H), ax = atlas.getContext('2d');
+  const map = {};
+  for (const it of items) { ax.drawImage(it.c, it.x, it.y); (map[it.name] = map[it.name] || [])[it.s] = [it.x, it.y, it.w, it.h, it.ax, it.ay]; }
+  document.body.appendChild(atlas);
+  return { atlas: atlas.toDataURL('image/png'), map, size: [AWID, H], icons: Object.fromEntries([16, 32, 48, 128].map(s => [s, icon(s)])) };
+};
+</script></body></html>

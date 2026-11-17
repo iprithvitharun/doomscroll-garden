@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="color-scheme" content="light dark">
+  <title>Doomscroll Garden</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header class="top">
+    <svg class="mark" viewBox="0 0 24 24" aria-hidden="true">
+      <path class="mark-stem" d="M12 21v-8.5"/>
+      <path class="mark-leaf" d="M12 13.2C11.6 8.6 8.4 6 3.6 6.3c.2 4.6 3.4 7.3 8.4 6.9Z"/>
+      <path class="mark-leaf" d="M12 11.2c.3-5 3.6-8 8.6-7.7-.1 5-3.5 8.2-8.6 7.7Z"/>
+    </svg>
+    <h1>Doomscroll Garden</h1>
+    <button id="pause" class="chip" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="pause-menu">
+      <svg id="pause-icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 3.5v9M10.5 3.5v9"/></svg>
+      <span id="pause-label">Pause</span>
+    </button>
+    <div id="pause-menu" class="menu" role="menu" popover>
+      <button type="button" role="menuitem" id="pause-hour"><span>For an hour</span><small id="pause-hour-until"></small></button>
+      <button type="button" role="menuitem" id="pause-site"><span id="pause-site-label">On this site today</span><small>Until 4 am</small></button>
+    </div>
+  </header>
+
+  <main>
+    <section class="here" aria-labelledby="stage">
+      <figure class="window" id="window">
+        <div class="bar" aria-hidden="true"><i></i><i></i><i></i><span id="win-host">x.com</span></div>
+        <div class="page" id="page">
+          <div class="feed" aria-hidden="true">
+            <div class="post"><b></b><i class="w70"></i><i class="w45"></i><u></u></div>
+            <div class="post"><b></b><i class="w60"></i><i class="w80"></i><i class="w30"></i></div>
+            <div class="post"><b></b><i class="w75"></i><u></u></div>
+          </div>
+          <canvas id="garden" aria-hidden="true"></canvas>
+          <p id="paused-tag" class="paused-tag" hidden></p>
+        </div>
+        <figcaption class="sr-only" id="window-caption"></figcaption>
+      </figure>
+
+      <div class="status">
+        <p class="meta"><span id="site"></span><span id="cover"></span></p>
+        <p class="stage" id="stage"></p>
+      </div>
+
+      <button id="cut" class="cut" type="button">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4 8.12 15.88M14.47 14.48 20 20M8.12 8.12 12 12"/></svg>
+        <span id="cut-label">Cut it all down</span>
+      </button>
+      <p id="note" class="note" hidden></p>
+    </section>
+
+    <section class="pace" aria-labelledby="pace-title">
+      <h2 id="pace-title">Overgrown after</h2>
+      <div class="seg" id="pace" role="radiogroup" aria-labelledby="pace-title"></div>
+    </section>
+
+    <section class="today" aria-labelledby="today-title">
+      <h2 id="today-title">Today</h2>
+      <ol id="today"></ol>
+    </section>
+
+    <section id="dev" class="dev" aria-labelledby="dev-title" hidden>
+      <h2 id="dev-title">Developer</h2>
+      <label class="switch">
+        <input type="checkbox" id="test" role="switch">
+        <span class="switch-text"><span>Demo speed</span><small id="test-hint"></small></span>
+      </label>
+      <label class="field">
+        <span>Art style</span>
+        <select id="style"></select>
+      </label>
+      <label class="field" id="jump-row">
+        <span class="field-row"><span>Jump to</span><output id="jump-val" for="jump"></output></span>
+        <input type="range" id="jump" min="0" max="34" step="0.25" value="0">
+      </label>
+    </section>
+  </main>
+
+  <footer>
+    <span>Everything stays on this computer.</span>
+    <button id="version" class="version" type="button" aria-controls="dev" aria-expanded="false" title="Developer settings"></button>
+  </footer>
+
+  <script src="../src/atlas.js"></script>
+  <script src="../src/util.js"></script>
+  <script src="../src/overgrowth.js"></script>
+  <script src="../src/styles.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>
